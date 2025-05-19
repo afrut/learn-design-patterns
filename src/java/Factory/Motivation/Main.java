@@ -41,22 +41,30 @@ public class Main {
     // moved to the parent
     private class BuyTransaction extends Transaction {
         private BigDecimal amount;
-        private BigDecimal commission;
         private Account account;
-        private BuyTransaction() {
+        private BigDecimal commission;
+        private BuyTransaction(BigDecimal amount, Account account, BigDecimal commission) {
+            this.amount = amount;;
+            this.account = account;
+            this.commission = commission;
         }
         private void execute() {
+            this.account.debit(amount.add(commission));
             System.out.println("Buy transaction executed.");
         }
     }
 
     private class SellTransaction extends Transaction {
         private BigDecimal amount;
-        private BigDecimal commission;
         private Account account;
-        private SellTransaction() {
+        private BigDecimal commission;
+        private SellTransaction(BigDecimal amount, Account account, BigDecimal commission) {
+            this.amount = amount;;
+            this.account = account;
+            this.commission = commission;
         }
         private void execute() {
+            this.account.credit(amount.subtract(commission));
             System.out.println("Sell transaction executed.");
         }
     }
@@ -64,9 +72,12 @@ public class Main {
     private class DepositTransaction extends Transaction {
         private BigDecimal amount;
         private Account account;
-        private DepositTransaction() {
+        private DepositTransaction(BigDecimal amount, Account account) {
+            this.amount = amount;;
+            this.account = account;
         }
         private void execute() {
+            this.account.credit(amount);
             System.out.println("Deposit transaction executed.");
         }
     }
@@ -74,9 +85,12 @@ public class Main {
     private class WithdrawTransaction extends Transaction {
         private BigDecimal amount;
         private Account account;
-        private WithdrawTransaction() {
+        private WithdrawTransaction(BigDecimal amount, Account account) {
+            this.amount = amount;;
+            this.account = account;
         }
         private void execute() {
+            this.account.debit(amount);
             System.out.println("Withdraw transaction executed.");
         }
     }
@@ -85,9 +99,14 @@ public class Main {
         private BigDecimal amount;
         private Account account;
         private Account toAccount;
-        private TransferTransaction() {
+        private TransferTransaction(BigDecimal amount, Account account, Account toAccount) {
+            this.amount = amount;;
+            this.account = account;
+            this.toAccount = toAccount;
         }
         private void execute() {
+            this.account.debit(amount);
+            this.toAccount.credit(amount);
             System.out.println("Transfer transaction executed.");
         }
     }
@@ -104,30 +123,32 @@ public class Main {
         private void setBranchId(int branch_id) { this.branch_id = branch_id; }
 
         // A method to execute a transaction
-        private Transaction transact(String type) {
+        // IMPROVEMENT: This method will have to take all the parameters to
+        // instantiate any type of transaction
+        private Transaction transact(String type, BigDecimal amount, Account account, BigDecimal commission, Account toAccount) {
             Transaction t = null;
             // IMPROVEMENT: If a new transaction type is added, this will have
             // to be modified. This if statement of types could potentitally be
             // dispersed throughout the codebase. This violates the open-closed
             // principle.
             if (type.equals("BUY")) {
-                BuyTransaction transaction = new BuyTransaction();
+                BuyTransaction transaction = new BuyTransaction(amount, account, commission);
                 transaction.execute();
                 t = transaction;
             } else if (type.equals("SELL")) {
-                SellTransaction transaction = new SellTransaction();
+                SellTransaction transaction = new SellTransaction(amount, account, commission);
                 transaction.execute();
                 t = transaction;
             } else if (type.equals("DEPOSIT")) {
-                DepositTransaction transaction = new DepositTransaction();
+                DepositTransaction transaction = new DepositTransaction(amount, account);
                 transaction.execute();
                 t = transaction;
             } else if (type.equals("WITHDRAW")) {
-                WithdrawTransaction transaction = new WithdrawTransaction();
+                WithdrawTransaction transaction = new WithdrawTransaction(amount, account);
                 transaction.execute();
                 t = transaction;
             } else if (type.equals("TRANSFER")) {
-                TransferTransaction transaction = new TransferTransaction();
+                TransferTransaction transaction = new TransferTransaction(amount, account, toAccount);
                 transaction.execute();
                 t = transaction;
             } else {
@@ -141,12 +162,13 @@ public class Main {
     public static void main(String[] args) {
         Main m = new Main();
         Account buyer1 = m.new Account(1, new BigDecimal(5000));
+        Account buyer2 = m.new Account(1, new BigDecimal(3000));
         Account seller1 = m.new Account(2, new BigDecimal(2673.10));
         Broker b = m.new Broker(1);
-        b.transact("BUY");
-        b.transact("SELL");
-        b.transact("DEPOSIT");
-        b.transact("WITHDRAW");
-        b.transact("TRANSFER");
+        b.transact("BUY", new BigDecimal(100), buyer1, new BigDecimal(10), null);
+        b.transact("SELL", new BigDecimal(100), seller1, new BigDecimal(20), null);
+        b.transact("DEPOSIT", new BigDecimal(200), buyer2, null, null);
+        b.transact("WITHDRAW", new BigDecimal(30), buyer2, null, null);
+        b.transact("TRANSFER", new BigDecimal(50), buyer2, null, buyer1);
     }
 }
